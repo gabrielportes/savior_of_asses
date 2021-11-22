@@ -1,6 +1,6 @@
 <?php
 // NÚMERO DE COLUNAS QUE TEM NA TABELA + 1
-$tam = 40; 
+$tam = 2; 
 // TODAS AS COLUNAS DA TABELA EM ORDEM DE INDEXAÇÃO
 $colunas = [
     'PRIMARY_KEY'
