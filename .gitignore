@@ -1,3 +1,5 @@
+emails/*
 *binlog*
 *resultado*
 *.sql
+*.csv
