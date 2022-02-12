@@ -1,6 +1,6 @@
 <?php
 const PATH_FILES = './emails/';
-const CSV_SEPARATOR = '|';
+const CSV_SEPARATOR = ';';
 const COLUNA_TITULO = 'titulo';
 const COLUNA_DESTINATARIOS = 'destinatarios';
 const COLUNA_DATA_ENVIO = 'data_envio';
@@ -39,13 +39,24 @@ const PADROES = [
 const DE_PARA_TITULO = [
     '=?iso-8859-1?B?U3VhIHJlc2VydmEgZm9pIGFwcm92YWRhLg==?=' => 'Sua reserva foi aprovada',
     '=?iso-8859-1?B?UmVzZXJ2YSBmb2kgY29uZmlybWFkYS4=?=' => 'Reserva foi confirmada.',
-    '=?iso-8859-1?B?U3VhIHBy6S1yZXNlcnZhIGZvaSBhZ2VuZGFkYQ==?=' => 'Sua pr�-reserva foi agendada',
+    '=?iso-8859-1?B?U3VhIHBy6S1yZXNlcnZhIGZvaSBhZ2VuZGFkYQ==?=' => 'Sua pré-reserva foi agendada',
     '=?iso-8859-1?B?U3VhIHJlc2VydmEgZm9pIGNhbmNlbGFkYS4=?=' => 'Sua reserva foi cancelada.',
-    '=?iso-8859-1?B?QXByb3ZlIG91IGNhbmNlbGUgZXN0YSBwcuktcmVzZXJ2YS4=?=' => 'Aprove ou cancele esta pr�-reserva.',
+    '=?iso-8859-1?B?QXByb3ZlIG91IGNhbmNlbGUgZXN0YSBwcuktcmVzZXJ2YS4=?=' => 'Aprove ou cancele esta pré-reserva.',
     '=?iso-8859-1?B?UmVzZXJ2YSBmb2kgY2FuY2VsYWRhLg==?=' => 'Reserva foi cancelada.',
     '=?iso-8859-1?B?UmVzZXJ2YSBDaHVycmFzcXVlaXJhIGRpYSAxMg==?=' => 'Reserva Churrasqueira dia 12',
-    '=?iso-8859-1?B?VW1hIHBy6S1yZXNlcnZhIGZvaSBhZ2VuZGFkYS4=?=' => 'Uma pr�-reserva foi agendada.',
-    '=?iso-8859-1?B?U3VhIHJlc2VydmEg6SBhIDK6IGRhIGZpbGE=?=' => 'Sua reserva � a 2� da fila'
+    '=?iso-8859-1?B?VW1hIHBy6S1yZXNlcnZhIGZvaSBhZ2VuZGFkYS4=?=' => 'Uma pré-reserva foi agendada.',
+    '=?iso-8859-1?B?U3VhIHJlc2VydmEg6SBhIDK6IGRhIGZpbGE=?=' => 'Sua reserva é a 2º da fila',
+    '=?iso-8859-1?B?U3VhIHJlc2VydmEg6SBhIDC6IGRhIGZpbGE=?=' => 'Sua reserva é a 0º da fila',
+    '=?iso-8859-1?B?T2zhIGdvc3RhcmlhIGRlIHJlc2VydmFyIG8gc2Fs428gZSBjaHVycmFzcXVlaXJhLi4u?=' => 'Olá gostaria de reservar o salão e churrasqueira...',
+    '=?iso-8859-1?B?VW1hIHBy6S1yZXNlcnZhIGZvaSBjb25maXJtYWRhLg==?=' => 'Uma pré-reserva foi confirmada.',
+    '=?iso-8859-1?B?U3VhIHJlc2VydmEg6SBhIDG6IGRhIGZpbGE=?=' => 'Reserva foi cancelada.',
+    '=?iso-8859-1?B?UmVzZXJ2YSBjaHVycmFzcXVlaXJhIGVtIDEzLzAyLzIwMjI=?=' => 'Reserva churrasqueira em 13/02/2022',
+    '=?iso-8859-1?B?UmVzZXJ2YSBjaHVycmFzcXVlaXJhIGVtIDA5LzAyLzIwMjI=?=' => 'Reserva churrasqueira em 09/02/2022',
+    '=?iso-8859-1?B?U3VhIHJlc2VydmEg6SBhIDO6IGRhIGZpbGE=?=' => 'Sua reserva é a 3º da fila'
+];
+const TITULOS_IGNORAR = [
+    '=?iso-8859-1?B?RnVuZG8gZGUgUmVzZXJ2YQ==?=',
+    '=?iso-8859-1?B?Q09ORE9NzU5JTyBSRVNFUlZBIEFSQVVDwVJJQSB2ZW5jZSBob2plLg==?='
 ];
 $licencas = scandir(PATH_FILES);
 foreach ($licencas as $licenca) {
@@ -80,7 +91,7 @@ foreach ($licencas as $licenca) {
         ];
         $bcc = false;
         while ($line = fgets($f)) {
-            $line = trim($line);
+            $line = trim(strip_tags($line));
             $lineNo++;
 
             $identificou = identificarPadrao($email, $line);
@@ -108,7 +119,10 @@ foreach ($licencas as $licenca) {
                 $email[COLUNA_CONDOMINIO] = $line;
             }
         }
-        adicionarDadosEmail($licenca, $email);
+
+        if (!in_array($email[COLUNA_TITULO], TITULOS_IGNORAR)) {
+            adicionarDadosEmail($licenca, $email);
+        }
         fclose($f);
     }
 }
@@ -159,7 +173,7 @@ function adicionarDadosEmail(string $licenca, array $email)
 
 function escreverLinhaNoArquivo(string $licenca, string $conteudo, string $mode = 'w')
 {
-    $filename = "./{$licenca}_emails_reservas.csv";
+    $filename = "./resultados/{$licenca}_emails_reservas.csv";
     if (!$fp = fopen($filename, $mode)) {
         echo "Cannot open file ($filename)";
         exit;
