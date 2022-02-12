@@ -5,6 +5,8 @@ Se o amiguinho do seu time rodar uma instrução no Banco de Dados sem `WHERE`, 
 
 Tem também um script para ler arquivos de emails (no padrão dos emails de reservas), e extrai algumas informações em csv.
 
+![Ass Cream](https://user-images.githubusercontent.com/35439823/142880397-91adb318-03a0-4588-a191-aa973ab0caeb.png)
+
 ### Script para extrair instruções do binlog
 Para usar, abra o script com o nome da instrução que deseja buscar e altere os lugares comentados.
 
