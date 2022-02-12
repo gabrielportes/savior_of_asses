@@ -156,6 +156,7 @@ function adicionarCabecalho(string $licenca)
     }
     $cabecalho .= "\n";
 
+    exec('mkdir -p resultados');
     escreverLinhaNoArquivo($licenca, $cabecalho, 'w');
 }
 
