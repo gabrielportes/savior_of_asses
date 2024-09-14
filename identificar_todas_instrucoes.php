@@ -277,7 +277,6 @@ class Binlog
 
     protected function isInsert($line): string
     {
-        // return false;
         $tablesRegex = $this->regexTables();
         preg_match(
             "/INSERT INTO `\w+`\.`({$tablesRegex})`/",
@@ -302,7 +301,20 @@ class Binlog
         return $table;
     }
 
-    protected function getInsertCommand($line, $lineNo, $table, $previousLine, $withTimestamp = true)
+    protected function isDelete($line): string
+    {
+        $tablesRegex = $this->regexTables();
+        preg_match(
+            "/DELETE FROM `\w+`\.`({$tablesRegex})`/",
+            $line,
+            $matches
+        );
+        $table = $matches[1] ?? '';
+
+        return $table;
+    }
+
+    protected function getInsertCommand($line, $lineNo, $table, $previousLine, $withTimestamp = true): string
     {
         $insert = '';
         $startLine = $lineNo;
@@ -342,7 +354,7 @@ class Binlog
         return $insert;
     }
 
-    protected function getUpdateCommand($line, $lineNo, $table, $previousLine, $withTimestamp = true)
+    protected function getUpdateCommand($line, $lineNo, $table, $previousLine, $withTimestamp = true): string
     {
         $update = '';
         $startLine = $lineNo;
@@ -409,6 +421,40 @@ class Binlog
         return $update;
     }
 
+    protected function getDeleteCommand($line, $lineNo, $table, $previousLine, $withTimestamp = true): string
+    {
+        $delete = '';
+        $startLine = $lineNo;
+        $pkIndex = $this->getPKIndex($table);
+        $pkName = $this->getColumnName($table, $pkIndex);
+
+        do {
+            $noHashtag = trim(str_replace(['###', "\n"], ['', ''], $line));
+
+            if ($lineNo == $startLine) {
+                $delete = $noHashtag;
+            }
+
+            if (strpos($line, "@{$pkIndex}=") !== false) {
+                $delete .= str_replace("@{$pkIndex}=", " WHERE {$pkName} = ", $noHashtag);
+                $delete = preg_replace('/\(\d+\)/', '', $delete);
+                $delete .= ';';
+
+                if ($withTimestamp) {
+                    preg_match('/\d{2}:\d{2}:\d{2}/', $previousLine, $matches);
+                    $timestamp = current($matches);
+                    $delete .= " -- {$timestamp}";
+                }
+
+                break;
+            }
+
+            $lineNo++;
+        } while ($line = fgets($this->binlogFile));
+
+        return $delete;
+    }
+
     protected function getCommand($line, $lineNo, $previousLine, $withTimestamp = true): string
     {
         if ($table = $this->isInsert($line)) {
@@ -423,6 +469,16 @@ class Binlog
 
         if ($table = $this->isUpdate($line)) {
             return $this->getUpdateCommand(
+                $line,
+                $lineNo,
+                $table,
+                $previousLine,
+                $withTimestamp
+            );
+        }
+
+        if ($table = $this->isDelete($line)) {
+            return $this->getDeleteCommand(
                 $line,
                 $lineNo,
                 $table,
